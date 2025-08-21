@@ -32,7 +32,7 @@ const ProductSchema = new mongoose.Schema({
         minlength: [3, 'El SKU del producto debe tener al menos 3 caracteres'],
         maxlength: [50, 'El SKU del producto no puede tener más de 50 caracteres']
     },
-     category: {
+    category: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Category',
             required: [true, 'La categoría  es requerida'],
@@ -45,8 +45,7 @@ const ProductSchema = new mongoose.Schema({
                 message: 'La categoría debe existir y estar activa'
     
             }
-        },
- subcategorycategory: {
+        }, subcategory: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Subcategory',
         required: [true, 'La subcategoría  es requerida'],
