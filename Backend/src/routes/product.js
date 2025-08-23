@@ -19,7 +19,7 @@ const{
 
 //Midllewares de autenticacion y autorizacion
 const{
-    verifyToken,
+    authMiddleware,
     verifyAdminOrCoordinator,
     verifyAdmin
 } = require('../middleware/auth');
@@ -39,7 +39,7 @@ router.get('/', getActiveProducts);
 router.get('/featured', getFeaturedProducts);
 
 //aplicar verificacion de token a todos las rutas
-router.use(verifyToken);
+router.use(authMiddleware);
 
 //estadistas de  los productos
 router.get('/stats', verifyAdmin, getProductStats);

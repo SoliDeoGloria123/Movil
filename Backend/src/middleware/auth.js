@@ -101,10 +101,60 @@ const verifyAdminOrOwner = async (req, res, next) => {
         return res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
 };
+const authMiddleware = (req, res, next) => {
+    try {
+        // Obtener token del header Authorization
+        const authHeader = req.header('Authorization');
+        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token no proporcionado o formato incorrecto'
+            });
+        }
+
+        // Extraer el token
+        const token = authHeader.replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token no proporcionado'
+            });
+        }
+
+        console.log(' DEBUG: Verificando token...');
+
+        // Verificar el token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        console.log(' DEBUG: Token decodificado:', decoded);
+        
+        // Mapear los datos del token al req.user
+        req.user = {
+            _id: decoded.userId,
+            userId: decoded.userId,
+            username: decoded.username,
+            role: decoded.role
+        };
+        
+        console.log(' DEBUG: Token válido para usuario:', req.user.username);
+        next();
+        
+    } catch (error) {
+        console.error(' Error en auth middleware:', error.message);
+        res.status(401).json({
+            success: false,
+            message: 'Token inválido'
+        });
+    }
+};
+
 module.exports = {
     verifyToken,
     verifyRole,
     verifyAdmin,
     verifyAdminOrCoordinator,
-    verifyAdminOrOwner
+    verifyAdminOrOwner,
+    authMiddleware
 };

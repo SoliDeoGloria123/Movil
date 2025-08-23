@@ -14,7 +14,7 @@ const{
 } = require('../controllers/categoryController');
 
 const{
-    verifyToken,
+    authMiddleware,
     verifyAdmin,
     verifyAdminOrCoordinator
 } = require('../middleware/auth')
@@ -26,7 +26,7 @@ const { validateObjectId } = require('../middleware/errorHandler');
 router.get('/active', getActiveCategories);
 
 //aplicar verificacion de token a todas las rutas
-router.use(verifyToken);
+router.use(authMiddleware);
 
 //Estadisticas de categorias
 router.get('/stats', verifyAdmin, getCategoryStats);

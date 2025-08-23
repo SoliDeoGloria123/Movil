@@ -12,7 +12,7 @@ const{
 } = require('../controllers/UserController');
 
 const{
-    verifyToken,
+    authMiddleware,
     verifyRole,
     verifyAdmin,
     verifyAdminOrCoordinator,
@@ -23,7 +23,7 @@ const{
 //Middleware de validacion
 const { validateObjectId } = require('../middleware/errorHandler');
 //aplicar verificacion de token a todas las rutas
-router.use(verifyToken);
+router.use(authMiddleware);
 
 //Estadisticas de usuarios
 router.get('/stats', verifyAdmin, getUserStats);

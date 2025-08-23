@@ -1,31 +1,19 @@
 const express = require('express');
 const router = express.Router();
 
-//Importar controladores de autenticacion
-const{
-    login,
-    getMe,
-    changePassword,
-    logout,
-    verifyToken
-} = require('../controllers/AuthController');
+// Importar controladores de autenticacion
+const AuthController = require('../controllers/AuthController');
 
-//importar middleware de autenticacion
-const{ verifyToken: authMiddleware } = require('../middleware/auth');
+// Importar middleware de autenticacion
+const { authMiddleware } = require('../middleware/auth');
 
-//Ruta login
-router.post('/login', login);
+// Rutas públicas
+router.post('/login', AuthController.login);
 
-//Ruta obtener usuario
-router.get('/me', authMiddleware, getMe);
-
-//Ruta cambiar contraseña
-router.put('/change-password', authMiddleware, changePassword);
-
-//Ruta cerrar sesión
-router.post('/logout', authMiddleware, logout);
-
-//Ruta verificar token
-router.get('/verify-token', authMiddleware, verifyToken);
+// Rutas protegidas
+router.get('/me', authMiddleware, AuthController.getMe);
+router.get('/verify', authMiddleware, AuthController.verifyToken);
+router.put('/change-password', authMiddleware, AuthController.changePassword);
+router.post('/logout', authMiddleware, AuthController.logout);
 
 module.exports = router;

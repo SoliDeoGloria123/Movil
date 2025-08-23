@@ -1,135 +1,214 @@
-const bcrypt = require('bcrypt');
-const { User } = require('../models');
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
-const { asyncHandler } = require('../middleware/errorHandler');
 
-//Login usuario
-const login = asyncHandler(async (req, res) => {
-    console.log(' DEBUG: Datos recibidos en login', req.body);
-    const { email, username, password } = req.body;
-    const loginField = email || username;
-    console.log(' DEBUG: Campo de login', loginField);
-    console.log(' DEBUG: Contraseña recibida', password ? '[PRESENTE]' : '[AUSENTE]');
-    //VALIDACION DE CAMPOS REQUERIDA
-    if (!loginField || !password) {
-        console.log(' Error - Faltan campos requeridos');
-        return res.status(400).json({
+// Login usuario
+const login = async (req, res) => {
+    try {
+        console.log(' DEBUG: Datos recibidos en login', req.body);
+        const { email, username, password } = req.body;
+        const loginField = email || username;
+        console.log(' DEBUG: Campo de login', loginField);
+        console.log(' DEBUG: Contraseña recibida', password ? '[PRESENTE]' : '[AUSENTE]');
+
+        // VALIDACION DE CAMPOS REQUERIDA
+        if (!loginField || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username/email y contraseña son requeridos'
+            });
+        }
+
+        // Busqueda de usuarios en la base de datos
+        const user = await User.findOne({
+            $or: [
+                { username: loginField },
+                { email: loginField }
+            ]
+        });
+
+        if (!user) {
+            console.log(' DEBUG: Usuario encontrado [NINGUNO]');
+            return res.status(401).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        console.log(' DEBUG: Usuario encontrado', user.username);
+        console.log(' DEBUG: Verificando contraseña');
+
+        // Verificar contraseña
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        console.log(' DEBUG: Contraseña válida', isValidPassword);
+
+        if (!isValidPassword) {
+            console.log(' DEBUG: Contraseña incorrecta');
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales inválidas'
+            });
+        }
+
+        // Generar token
+        const token = generateToken({
+            userId: user._id.toString(),
+            username: user.username,
+            role: user.role 
+        });
+
+        console.log(' DEBUG: Token generado', token);
+
+        // Respuesta exitosa
+        res.json({
+            success: true,
+            message: 'Login exitoso',
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error(' Error en login:', error);
+        res.status(500).json({
             success: false,
-            message: 'Username y contraseña son requeridos'
+            message: 'Error al procesar la solicitud'
         });
     }
-    //Busqueda de usuarios en la base de datos
-    try{
-        console.log(' DEBUG: Buscando usuario en la base de datos', loginField.toLowerCase());
-    const user = await User.findOne({
-        $or: [
-            { username: loginField.toLowerCase() },
-            { email: loginField.toLowerCase() }
-        ]
-    }).select('+password');//incluye el campo  de contraseña oculta
-    console.log(' DEBUG: Usuario encontrado', user ? user.username : '[NINGUNO]');
-    if (!user) {
-        console.log(' Error - Usuario no encontrado');
-        return res.status(404).json({
+};
+
+// Obtener informacion del usuario autenticado
+const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        res.json({
+            success: true,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            }
+        });
+    } catch (error) {
+        console.error(' Error en getMe:', error);
+        res.status(500).json({
             success: false,
-            message: 'Usuario no encontrado'
+            message: 'Error al obtener información del usuario'
         });
     }
-    //Validar usuario inactivo
-    if (!user.isActive) {
-        console.log(' Error - Usuario inactivo');
-        return res.status(403).json({
+};
+
+// Cambio de contraseña
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Contraseña actual y nueva contraseña son requeridas'
+            });
+        }
+
+        const user = await User.findById(req.user._id);
+        
+        // Verificar contraseña actual
+        const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+        
+        if (!isValidPassword) {
+            return res.status(401).json({
+                success: false,
+                message: 'Contraseña actual incorrecta'
+            });
+        }
+
+        // Encriptar nueva contraseña
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        
+        // Actualizar contraseña
+        await User.findByIdAndUpdate(req.user._id, { password: hashedPassword });
+
+        res.json({
+            success: true,
+            message: 'Contraseña actualizada exitosamente'
+        });
+
+    } catch (error) {
+        console.error(' Error en changePassword:', error);
+        res.status(500).json({
             success: false,
-            message: 'Usuario inactivo'
+            message: 'Error al cambiar contraseña'
         });
     }
-    //VERIFICACION DE CONTRASEÑA
-   console.log(' DEBUG: Verificando contraseña');
-   const isPasswordValid = await bcrypt.comparePassword(password);
-   console.log(' DEBUG: Contraseña válida', isPasswordValid);
-   if (!isPasswordValid) {
-       console.log(' Error - Contraseña incorrecta');
-       return res.status(401).json({
-           success: false,
-           message: 'Contraseña incorrecta'
-       });
-   }
-   user.lastlogin = new Date();
-   await user.save();
-   //Generar token JWT
-   const token = generateToken(user._id);
-   console.log(' DEBUG: Token generado', token);
-   return res.status(200).json({
-       success: true,
-       message: 'Login exitoso',
-       data:{
-        user: userResponse,
-        token,
-       expiresIn: process.env.JWT_EXPIRES_IN || '1h',
-       }
-   });
-} catch (error) {
-        console.log(' Error en login:', error);
-        return res.status(500).json({
+};
+
+// Invalidar token usuario (logout)
+const logout = async (req, res) => {
+    try {
+        res.json({
+            success: true,
+            message: 'Logout exitoso'
+        });
+    } catch (error) {
+        console.error(' Error en logout:', error);
+        res.status(500).json({
             success: false,
-            message: 'Error al procesar la solicitud',
+            message: 'Error al hacer logout'
         });
     }
-});
-//Obtener informacion del usuario autenticado
-const getMe = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id);
-    res.status(200).json({
-        success: true,
-        data: user
-    });
-});
-//Cambio de contraseña
-const changePassword = asyncHandler(async (req, res) => {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-        return res.status(400).json({
+};
+
+// Verificar token
+const verifyToken = async (req, res) => {
+    try {
+        console.log(' DEBUG: Verificando token para usuario:', req.user);
+        
+        const user = await User.findById(req.user._id).select('-password');
+        
+        if (!user) {
+            console.log(' DEBUG: Usuario no encontrado en DB:', req.user._id);
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        console.log(' DEBUG: Token verificado exitosamente para:', user.username);
+
+        res.json({
+            success: true,
+            message: 'Token válido',
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error(' Error en verifyToken:', error);
+        res.status(500).json({
             success: false,
-            message: 'Contraseña actual y nueva son requeridas'
+            message: 'Error al verificar token'
         });
     }
-    if(newPassword.length < 6) {
-        return res.status(400).json({
-            success: false,
-            message: 'La nueva contraseña debe tener al menos 6 caracteres'
-        });
-    }
-    //Olvidaste usuario con contraseña actual
-    const user = await User.findById(req.user._id).select('+password');
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-    if (!isCurrentPasswordValid) {
-        return res.status(401).json({
-            success: false,
-            message: 'Contraseña actual incorrecta'
-        });
-    }
-    user.password = newPassword;
-    await user.save();
-    res.status(200).json({
-        success: true,
-        message: 'Contraseña cambiada exitosamente'
-    });
-});
-//Invalidar token usuario estraño
-const logout = asyncHandler(async (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Logout exitoso'
-    });
-});
-//Verificar token
-const verifyToken = asyncHandler(async (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Token válido',
-        data: req.user
-    });
-});
+};
 
 module.exports = {
     login,

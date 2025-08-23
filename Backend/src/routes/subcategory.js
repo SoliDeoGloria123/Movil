@@ -16,7 +16,7 @@ const{
 
 //Midllewares de autenticacion y autorizacion
 const{
-    verifyToken,
+    authMiddleware,
     verifyAdminOrCoordinator,
     verifyAdmin
 } = require('../middleware/auth');
@@ -31,7 +31,7 @@ router.get('/category/:categoryId', validateObjectId('categoryId'), getSubcatego
 router.get('/', getActiveSubcategories);
 
 //aplicar verificacion de token a todos las rutas
-router.use(verifyToken);
+router.use(authMiddleware);
 
 //estadistas de  los subcategorias
 router.get('/stats', verifyAdmin, getSubcategoryStats);

@@ -75,7 +75,7 @@ categorySchema.virtual('productCount', {
     count: true
 });
 
-categorySchema.static.findActive = function(){
+categorySchema.statics.findActive = function(){
     return this.find({ isActive: true }).sort({sortOrder: 1, name: 1});
 };
 
