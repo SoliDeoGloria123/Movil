@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "e5f8c1a0-1234-5678-9abc-def012345678",
-		"name": "API Móvil - Gestión de Productos",
+		"name": "API Móvil - Gestión de ProductosV2",
 		"description": "Colección completa para probar la API de gestión de productos con autenticación automática",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},

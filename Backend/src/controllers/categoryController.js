@@ -1,4 +1,4 @@
-const { Category, SubCategory, Product } = require('../models');
+const { Category, Subcategory, Product } = require('../models'); // ✅ Cambiar SubCategory a Subcategory
 const { asyncHandler } = require('../middleware/errorHandler');
 
 //Obteer todas las categorias
@@ -62,7 +62,7 @@ const getCategoryById = asyncHandler(async (req, res) => {
         });
     }
     //Obtener subcategorias  de esta categoria
-    const subCategories = await SubCategory.find({ category: category._id, isActive: true })
+    const subCategories = await Subcategory.find({ category: category._id, isActive: true }) // ✅ Cambiar SubCategory a Subcategory
     .sort({ sortOrder: 1, name: 1 });
     res.status(200).json({
         success: true,
@@ -171,14 +171,14 @@ const deleteCategory = asyncHandler(async (req, res) => {
         });
     }
     //verificar si se puede eliminar
-    const canDelete = await category.canDelete();
+    const canDelete = await category.canBeDeleted(); // ✅ Cambiar de canDelete() a canBeDeleted()
     if (!canDelete) {
         return res.status(400).json({
             success: false,
-            message: 'No se puede eliminar la categoría porque tiene subcategorías asociadas'
+            message: 'No se puede eliminar la categoría porque tiene subcategorías o productos asociados'
         });
     }
-    await category.findOneAndDelete(req.params.id);
+    await Category.findByIdAndDelete(req.params.id); // ✅ Cambiar también esta línea
     res.status(200).json({
         success: true,
         message: 'Categoría eliminada correctamente'
@@ -187,7 +187,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
 
 //Activar o desactivar categoría
 const toggleCategoryActive = asyncHandler(async (req, res) => {
-    const category = await Category.findById(req.params._id);
+    const category = await Category.findById(req.params.id); // ✅ Cambiar de _id a id
     if (!category) {
         return res.status(404).json({
             success: false,
@@ -199,7 +199,7 @@ const toggleCategoryActive = asyncHandler(async (req, res) => {
     await category.save();
     //Si la categoria se desactiva  desactivar subcategorias y productos asociados
     if (!category.isActive) {
-        await SubCategory.updateMany({ category: category._id }, { isActive: false, updatedBy: req.user._id });
+        await Subcategory.updateMany({ category: category._id }, { isActive: false, updatedBy: req.user._id }); // ✅ Cambiar SubCategory a Subcategory
         await Product.updateMany({ category: category._id }, { isActive: false, updatedBy: req.user._id });
     }
     res.status(200).json({

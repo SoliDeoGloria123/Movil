@@ -75,7 +75,7 @@ const verifyRole =(...allowedRoles) => {
     }
 };
 const verifyAdmin = verifyRole('admin');
-const verifyAdminOrCoordinator = verifyRole('admin', 'coordinator');
+const verifyAdminOrCoordinator = verifyRole('admin', 'coordinador');
 
 const verifyAdminOrOwner = async (req, res, next) => {
     try {

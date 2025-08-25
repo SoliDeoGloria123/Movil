@@ -1,16 +1,14 @@
-const mongose = require('mongoose');
-const bcriypt = require('bcrypt');
-const { default: mongoose } = require('mongoose');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
-const userSchema = new mongose.Schema({
+const userSchema = new mongoose.Schema({
     username:{
         type: String,
         required: [true, 'el nombre del usuarios es requerido'],
         unique: true,
-        trim:true,
+        trim: true,
         minlength: [3, 'el nombre de usuario debe tener al menos 3 caracteres'],
         maxlength: [50, 'el nombre de usuario no puede tener mas de 20 caracteres']
-
     },
     email:{
         type: String,
@@ -24,7 +22,12 @@ const userSchema = new mongose.Schema({
         type: String,
         required: [true, 'la contraseña es requerida'],
         minlength: [6, 'la contraseña debe tener al menos 6 caracteres'],
-       
+    },
+    firstName: {
+        type: String,
+        required: [true, 'el nombre es requerido'],
+        trim: true,
+        maxlength: [50, 'el nombre no puede tener mas de 50 caracteres']
     },
     lastName: {
         type: String,
@@ -52,21 +55,23 @@ const userSchema = new mongose.Schema({
     lastlogin:{
         type: Date,
     },
-    creadoAt: {
-      type: mongose.Schema.Types.ObjectId,
-      ref: 'user',
-
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }
-},
-{
+},{
     timestamps: true
 });
 
 userSchema.pre('save', async function(next){
     if(!this.isModified('password')) return next();
     try{
-    const salt = await bcriypt.genSalt(12);
-    this.password = await bcriypt.hash(this.password, salt);
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
     } catch (error) {
         next(error);
@@ -78,8 +83,8 @@ userSchema.pre('findOneAndUpdate', async function(next){
     const update =this.getUpdate();
     if(update.password){
         try{
-            const salt = await bcriypt.genSalt(12);
-            update.password = await bcriypt.hash(update.password, salt);
+            const salt = await bcrypt.genSalt(12);
+            update.password = await bcrypt.hash(update.password, salt);
         } catch (error) {
             return next(error);
         }
@@ -92,7 +97,7 @@ userSchema.pre('findOneAndUpdate', async function(next){
  //metodo para compara contraseñas
  userSchema.methods.comparePassword = async function(candidatePassword){
     try{
-        return await bcriypt.compare(candidatePassword, this.password);
+        return await bcrypt.compare(candidatePassword, this.password);
 
     }catch (error){
         throw error;
