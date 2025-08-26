@@ -85,16 +85,21 @@ const verifyAdminOrOwner = async (req, res, next) => {
                 message: 'No se ha autenticado al usuario'
             });
         }
-        if (req.user.role !== 'admin') {
+        
+        // Si es admin, puede acceder a cualquier usuario
+        if (req.user.role === 'admin') {
             return next();
         }
+        
+        // Si no es admin, solo puede acceder a su propio perfil
         const targetUserId = req.params.id || req.body.userId;
-        if (req.user.id.toString() !== targetUserId.toString()) {
+        if (req.user.userId.toString() !== targetUserId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: 'No tiene permisos para acceder a este recurso'
             });
         }
+        
         next();
     } catch (error) {
         console.error('Error al verificar el rol de administrador:', error);

@@ -48,18 +48,30 @@ res.status(200).json({
 
 // Obtener un usuario por ID
 const getUserById = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.params.id)
-        .populate('createdBy', 'username firstName lastName');
-    if (!user) {
-        return res.status(404).json({
+    try {
+        const user = await User.findById(req.params.id)
+            .populate('createdBy', 'username firstName lastName')
+            .populate('updatedBy', 'username firstName lastName');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        console.error('Error en getUserById:', error);
+        res.status(500).json({
             success: false,
-            message: 'Usuario no encontrado'
+            message: 'Error interno del servidor',
+            error: error.message
         });
     }
-    res.status(200).json({
-        success: true,
-        data: user
-    });
 });
 
 //Crear un usuario

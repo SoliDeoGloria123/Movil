@@ -262,40 +262,37 @@ const updateProduct = asyncHandler(async (req, res) => {
                 message: 'Ya existe un sku '
             });
         }
-       }
+       }       // Validar categoría y subcategoría si se están actualizando
        if(category || subcategory) {
         const targetCategory = category || product.category;
         const targetSubcategory = subcategory || product.subcategory;
 
-       }
-
-    //si cambia la categoria  validar que ya exista
+        // Validar que la categoría existe y está activa
         const parentCategory = await Category.findById(targetCategory);
         if (!parentCategory || !parentCategory.isActive) {
             return res.status(400).json({
                 success: false,
-                message: 'La categoría padre no existe o no está activa'
+                message: 'La categoría no existe o no está activa'
             });
         }
-           const parentSubcategory = await Category.findById(targetSubcategory);
+
+        // Validar que la subcategoría existe y está activa
+        const parentSubcategory = await Subcategory.findById(targetSubcategory);
         if (!parentSubcategory || !parentSubcategory.isActive) {
             return res.status(400).json({
                 success: false,
-                message: 'La subcategoría padre no existe o no está activa'
+                message: 'La subcategoría no existe o no está activa'
             });
         }
-        if (!parentCategory.isActive) {
-            return res.status(400).json({
-                success: false,
-                message: 'La categoría padre no está activa'
-            });
-        }
-        if (parentSubcategory.category.toString() !== targetCategoryId()) {
+
+        // Validar que la subcategoría pertenece a la categoría
+        if (parentSubcategory.category.toString() !== targetCategory.toString()) {
             return res.status(400).json({
                 success: false,
                 message: 'La subcategoría no pertenece a la categoría seleccionada'
             });
         }
+       }
 
 //Actualizar productos
 if (name ) product.name = name;
