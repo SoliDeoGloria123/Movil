@@ -27,27 +27,31 @@ const{
 //Middleware de validacion 
 const {validateObjectId,} = require('../middleware/errorHandler');
 
-//subcategorias activadas para el frontend publico
+// ========== RUTAS PÚBLICAS (sin autenticación) ==========
+//Productos activos para frontend publico
+router.get('/active', getActiveProducts);
+
+//Productos por categoría (público)
 router.get('/category/:categoryId', validateObjectId('categoryId'), getProductsByCategories);
 
-//subcategorias activadas para el frontend publico
+//Productos por subcategoría (público)
 router.get('/subcategory/:subcategoryId', validateObjectId('subcategoryId'), getProductsBysubcategories);
 
-//Subcategorias activas para frontend publico
-router.get('/', getActiveProducts);
-
+//Productos destacados (público)
 router.get('/featured', getFeaturedProducts);
 
-//aplicar verificacion de token a todos las rutas
+// ========== APLICAR AUTENTICACIÓN A RUTAS PROTEGIDAS ==========
 router.use(authMiddleware);
 
-//estadistas de  los productos
+// ========== RUTAS PROTEGIDAS (requieren autenticación) ==========
+//Estadísticas de productos (solo admin)
 router.get('/stats', verifyAdmin, getProductStats);
-//ontener productos por sku
+
+//Obtener productos por SKU
 router.get('/sku/:sku', getProductBySku);
 
-//lista de todos los productos
-router.get('/',  getProducts);
+//Lista de todos los productos (panel admin)
+router.get('/', getProducts);
 
 //subcategoria por id
 router.get('/:id', validateObjectId('id'),  getProductById);

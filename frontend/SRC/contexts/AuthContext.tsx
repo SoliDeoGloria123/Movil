@@ -94,4 +94,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
     }
   };
+// Refresca los datos de usuario actual sin haccer login de nuevo
+ const refreshUser = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      const userData = await authService.getUser();
+      setUser(userData);
+    } catch (error) {
+      console.error('ERROR: Refrescando datos de usuario', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 };

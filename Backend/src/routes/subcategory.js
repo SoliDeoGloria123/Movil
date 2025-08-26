@@ -24,26 +24,26 @@ const{
 //Middleware de validacion 
 const {validateObjectId,} = require('../middleware/errorHandler');
 
-//subcategorias activadas para el frontend publico
+//Subcategorias activas para frontend publico (sin autenticación)
+router.get('/active', getActiveSubcategories);
+
+//subcategorias por categoria (sin autenticación)
 router.get('/category/:categoryId', validateObjectId('categoryId'), getSubcategoriesByCategory);
 
-//Subcategorias activas para frontend publico
-router.get('/', getActiveSubcategories);
-
-//aplicar verificacion de token a todos las rutas
+//aplicar verificacion de token a todas las rutas protegidas
 router.use(authMiddleware);
 
-//estadistas de  los subcategorias
+//estadistas de subcategorias (requiere admin)
 router.get('/stats', verifyAdmin, getSubcategoryStats);
 
-//reordenar subcategorias
+//reordenar subcategorias (requiere admin o coordinador)
 router.post('/reorder', verifyAdminOrCoordinator, reorderSubcategories);
 
-//lista de todos los subcategorias
-router.get('/',  getSubcategories);
+//lista de todas las subcategorias (requiere autenticación)
+router.get('/', getSubcategories);
 
-//subcategoria por id
-router.get('/:id', validateObjectId('id'),  getSubcategoryById);
+//subcategoria por id (requiere autenticación)
+router.get('/:id', validateObjectId('id'), getSubcategoryById);
 
 //crear un nuevo subcategoria
 router.post('/', verifyAdminOrCoordinator, createSubcategory);
