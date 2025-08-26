@@ -6,6 +6,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/auth';
 import { User, LoginCredentials, LoginResponse } from '../types';
 import { set } from 'mongoose';
+import { log } from 'console';
 
 // Interfaz de contexto
 interface AuthContextType {
@@ -101,9 +102,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userData = await authService.getUser();
       setUser(userData);
     } catch (error) {
-      console.error('ERROR: Refrescando datos de usuario', error);
-    } finally {
-      setIsLoading(false);
+      console.warn('ERROR: Refrescando datos de usuario', error);
+      await logout();
     }
   };
+// Permisos de eliminar solo admin
+    const canDelete = (): boolean => {
+        return user?.role === 'admin';
+    };
+// Permisos de editar admin y coordinador
+    const canEdit = (): boolean => {
+        return user?.role === 'admin' || user?.role === 'coordinador';
+    }
+// Verifica si el usuario tiene un rol específico
+    const hasRole = (role: 'admin' | 'coordinador'): boolean => {
+        return user?.role === role;
+    };
+
+    const isAuthenticated = !!user;
+
+    // Datos de las funciones que estaran disponibles en la app
+    const value: AuthContextType = {
+        user,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+        refresh: refreshUser,
+        canDelete,
+        canEdit,
+        hasRole,
+    };
+
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
+
+export const useAuth = (): AuthContextType => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    }
+    return context;
+};
+
+
