@@ -2,11 +2,8 @@
 
 // Importa dependencias
 import React, { createContext, useContext, useEffect, useState } from 'react';
-
 import { authService } from '../services/auth';
-import { User, LoginCredentials, LoginResponse } from '../types';
-import { set } from 'mongoose';
-import { log } from 'console';
+import { User, LoginCredentials, LoginResponse } from '../types/index';
 
 // Interfaz de contexto
 interface AuthContextType {
@@ -25,7 +22,7 @@ interface AuthContextType {
     hasRole: (role: 'admin' | 'coordinador') => boolean;
 
 }
-//
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -40,23 +37,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuthStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   const checkAuthStatus = async () => {
     try {
+      console.log('Verificando estado de autenticación...');
       setIsLoading(true);
       const isAAuth = await authService.isAuthenticated();
+      console.log('¿Usuario autenticado?:', isAAuth);
 
       if (isAAuth) {
         const isValideToken = await authService.validateToken();
+        console.log('¿Token válido?:', isValideToken);
 
         if (isValideToken) {
           const userData = await authService.getUser();
+          console.log('Datos del usuario:', userData);
           setUser(userData);
         } else {
           await authService.clearAuthData();
           setUser(null);
         }
       } else {
+        console.log('Usuario no autenticado');
         setUser(null);
       }
     } catch (error) {
@@ -64,22 +65,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authService.clearAuthData();
       setUser(null);
     } finally {
+      console.log('Finalizando verificación de autenticación');
       setIsLoading(false);
     }
   };
-
   // Proceso de iniciar sesión DEL login
     const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
         try {
+        console.log('AuthContext: Iniciando proceso de login');
         setIsLoading(true);
         const response = await authService.login(credentials);
+        console.log('AuthContext: Respuesta del servicio de login:', response);
+        
         if (response.success && response.data) {
+            console.log('AuthContext: Login exitoso, estableciendo usuario:', response.data.user);
             setUser(response.data.user);
+        } else {
+            console.log('AuthContext: Login falló:', response.message);
         }
         return response;
         } catch (error: any) {
+        console.error('AuthContext: Error en login:', error);
         throw error;
         } finally {
+        console.log('AuthContext: Finalizando proceso de login, setIsLoading(false)');
         setIsLoading(false);
         }
     };
